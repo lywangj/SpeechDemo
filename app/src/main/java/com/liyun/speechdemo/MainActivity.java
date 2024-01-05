@@ -55,7 +55,7 @@ public class MainActivity extends Activity {
 
         String textToRead = "one two three";
 
-        pollyObject = new Polly(Region.getRegion(Regions.US_WEST_1));
+        pollyObject = new Polly(this, Region.getRegion(Regions.US_WEST_1));
 
         welcomeUser(textToRead);
 //        fileUpload(textToRead);

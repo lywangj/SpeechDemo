@@ -1,5 +1,8 @@
 package com.liyun.speechdemo;
 
+import android.content.Context;
+import android.util.Log;
+
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -15,6 +18,8 @@ import com.amazonaws.services.polly.model.SynthesizeSpeechRequest;
 import com.amazonaws.services.polly.model.SynthesizeSpeechResult;
 import com.amazonaws.services.polly.model.Voice;
 
+import org.json.JSONObject;
+
 
 /**
  *
@@ -22,10 +27,16 @@ import com.amazonaws.services.polly.model.Voice;
  */
 public class Polly
 {
+    private static final String TAG = "Polly";
+
+    private Context mContext;
 
     private AmazonPollyClient polly;
     private Voice voice;
     SynthesizeSpeechRequest synthReq;
+    private BasicAWSCredentials mAwsCredentials;
+    private String AWS_ACCESS_KEY;
+    private String AWS_SECRET_KEY;
 
     public Polly() {
     }
@@ -52,14 +63,25 @@ public class Polly
         return synthRes.getAudioStream();
     }
 
-    public Polly(Region region)
+    public Polly(Context context, Region region)
     {
+        mContext = context;
+
+        Boolean hasAWSKey = getAwsConfiguration();
+
+        if (!hasAWSKey) {
+            Log.e(TAG, "Invalid aws keys");
+            return;
+        } else {
+            Log.d(TAG, "Valid aws keys");
+        }
+        AWSCredentials credentials = new BasicAWSCredentials(AWS_ACCESS_KEY, AWS_SECRET_KEY);
 
 
         // create an Amazon Polly client in a specific region
-        AWSCredentials credentials = new BasicAWSCredentials(
-                "",
-                "");
+//        AWSCredentials credentials = new BasicAWSCredentials(
+//                "",
+//                "");
         polly = new AmazonPollyClient(credentials,new ClientConfiguration());
         polly.setRegion(region);
         // Create describe voices request.
@@ -73,6 +95,24 @@ public class Polly
         voice = describeVoicesResult.getVoices().get(0);
 
 
+    }
+
+    private boolean getAwsConfiguration() {
+        try {
+            InputStream inputStream = mContext.getAssets().open("awsconfiguration.json");
+            byte[] buffer = new byte[inputStream.available()];
+            inputStream.read(buffer);
+            inputStream.close();
+            String json = new String(buffer, "UTF-8");
+
+            JSONObject AWSConfig = new JSONObject(json);
+            AWS_ACCESS_KEY = AWSConfig.getString("AWS_ACCESS_KEY");
+            AWS_SECRET_KEY = AWSConfig.getString("AWS_SECRET_KEY");
+            Log.d(TAG, "aaa " + AWS_ACCESS_KEY + " " + AWS_ACCESS_KEY);
+        } catch (Exception e) {
+            return false;
+        }
+        return true;
     }
 
 }
