@@ -76,25 +76,30 @@ public class Polly
             Log.d(TAG, "Valid aws keys");
         }
         AWSCredentials credentials = new BasicAWSCredentials(AWS_ACCESS_KEY, AWS_SECRET_KEY);
+        Log.d(TAG, AWS_ACCESS_KEY);
 
 
         // create an Amazon Polly client in a specific region
 //        AWSCredentials credentials = new BasicAWSCredentials(
 //                "",
 //                "");
-        polly = new AmazonPollyClient(credentials,new ClientConfiguration());
-        polly.setRegion(region);
-        // Create describe voices request.
-        DescribeVoicesRequest describeVoicesRequest = new DescribeVoicesRequest();//en-IN
 
-        // DescribeVoicesRequest describeVoicesRequestIndian = new DescribeVoicesRequest().withLanguageCode("en-IN");
-        // Synchronously ask Amazon Polly to describe available TTS voices.
-        DescribeVoicesResult describeVoicesResult = polly.describeVoices(describeVoicesRequest);
+        Runnable runnable = new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                polly = new AmazonPollyClient(credentials,new ClientConfiguration());
+                polly.setRegion(region);
+                // Create describe voices request.
+                DescribeVoicesRequest describeVoicesRequest = new DescribeVoicesRequest();//en-IN
 
-
-        voice = describeVoicesResult.getVoices().get(0);
-
-
+                // DescribeVoicesRequest describeVoicesRequestIndian = new DescribeVoicesRequest().withLanguageCode("en-IN");
+                // Synchronously ask Amazon Polly to describe available TTS voices.
+                DescribeVoicesResult describeVoicesResult = polly.describeVoices(describeVoicesRequest);
+                voice = describeVoicesResult.getVoices().get(0);
+            }
+        };
     }
 
     private boolean getAwsConfiguration() {
