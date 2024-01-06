@@ -59,6 +59,7 @@ public class MainActivity extends Activity {
     private Voice voice;
     SynthesizeSpeechRequest synthReq;
     private BasicAWSCredentials mAwsCredentials;
+    private MediaPlayer mediaPlayer;
     private String AWS_ACCESS_KEY;
     private String AWS_SECRET_KEY;
 
@@ -71,6 +72,8 @@ public class MainActivity extends Activity {
         String textToRead = "one two three";
 
 //        pollyObject = new Polly(this, Region.getRegion(Regions.US_WEST_1));
+
+        setupNewMediaPlayer();
 
         Boolean hasAWSKey = getAwsConfiguration();
 
@@ -157,6 +160,31 @@ public class MainActivity extends Activity {
             return false;
         }
         return true;
+    }
+
+    void setupNewMediaPlayer() {
+        mediaPlayer = new MediaPlayer();
+        mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+            @Override
+            public void onCompletion(MediaPlayer mp) {
+                mp.release();
+                setupNewMediaPlayer();
+            }
+        });
+        mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+            @Override
+            public void onPrepared(MediaPlayer mp) {
+                mp.start();
+                // playButton.setEnabled(true);
+            }
+        });
+        mediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+            @Override
+            public boolean onError(MediaPlayer mp, int what, int extra) {
+                // playButton.setEnabled(true);
+                return false;
+            }
+        });
     }
 
     public void welcomeUser(String user)
