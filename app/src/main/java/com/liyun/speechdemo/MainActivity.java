@@ -1,54 +1,34 @@
 package com.liyun.speechdemo;
 
+import android.os.AsyncTask;
 import android.os.Bundle;
 //import android.speech.tts.Voice;
 
-import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 
 
 import android.app.Activity;
-import android.media.AudioManager;
 import android.media.MediaPlayer;
-import android.os.Bundle;
 import android.os.Handler;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.util.Log;
-import android.view.KeyEvent;
-import android.view.View;
-import android.widget.AdapterView;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ImageButton;
-import android.widget.Spinner;
-import android.widget.TextView;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.mobile.client.AWSMobileClient;
-import com.amazonaws.mobile.client.Callback;
-import com.amazonaws.mobile.client.UserStateDetails;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.polly.AmazonPollyClient;
-import com.amazonaws.services.polly.AmazonPollyPresigningClient;
+
 import com.amazonaws.services.polly.model.DescribeVoicesRequest;
 import com.amazonaws.services.polly.model.DescribeVoicesResult;
 import com.amazonaws.services.polly.model.OutputFormat;
-import com.amazonaws.services.polly.model.SynthesizeSpeechPresignRequest;
 import com.amazonaws.services.polly.model.SynthesizeSpeechRequest;
 import com.amazonaws.services.polly.model.SynthesizeSpeechResult;
 import com.amazonaws.services.polly.model.Voice;
 
 import org.json.JSONObject;
-
-import java.io.IOException;
-import java.io.Serializable;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
 
 public class MainActivity extends Activity {
     private static final String TAG = "PollyDemo";
@@ -59,6 +39,7 @@ public class MainActivity extends Activity {
     private Voice voice;
     SynthesizeSpeechRequest synthReq;
     private BasicAWSCredentials mAwsCredentials;
+    private BasicAWSCredentials credentials;
     private MediaPlayer mediaPlayer;
     private String AWS_ACCESS_KEY;
     private String AWS_SECRET_KEY;
@@ -83,43 +64,45 @@ public class MainActivity extends Activity {
         } else {
             Log.d(TAG, "Valid aws keys");
         }
-        AWSCredentials credentials = new BasicAWSCredentials(AWS_ACCESS_KEY, AWS_SECRET_KEY);
+        credentials = new BasicAWSCredentials(AWS_ACCESS_KEY, AWS_SECRET_KEY);
         Log.d(TAG, AWS_ACCESS_KEY);
         // create an Amazon Polly client in a specific region
 //        AWSCredentials credentials = new BasicAWSCredentials(
 //                "",
 //                "");
 
-        Handler handler = new Handler();
-        Runnable runnable = new Runnable() {
-            @Override
-            public void run() {
-                Log.d(TAG, "checkkkkkkkkkkk 1");
-                polly = new AmazonPollyClient(credentials, new ClientConfiguration());
-                polly.setRegion(Region.getRegion(Regions.US_WEST_1));
-                // Create describe voices request.
-                DescribeVoicesRequest describeVoicesRequest = new DescribeVoicesRequest();//en-IN
+        AwsSpeech awsSpeech = new AwsSpeech();
 
-                Log.d(TAG, "checkkkkkkkkkkk 1");
-
-                // DescribeVoicesRequest describeVoicesRequestIndian = new DescribeVoicesRequest().withLanguageCode("en-IN");
-                // Synchronously ask Amazon Polly to describe available TTS voices.
-                DescribeVoicesResult describeVoicesResult = polly.describeVoices(describeVoicesRequest);
-                voice = describeVoicesResult.getVoices().get(0);
-
-                Log.d(TAG, "checkkkkkkkkkkk 1");
-
-                SynthesizeSpeechRequest synthReq = new SynthesizeSpeechRequest().withText(textToRead).withVoiceId(voice.getId())
-                        .withOutputFormat(OutputFormat.Mp3);
-
-                SynthesizeSpeechResult synthRes = polly.synthesizeSpeech(synthReq);
-
-
-                speechStream = synthRes.getAudioStream();
-
-                Log.d(TAG, "checkkkkkkkkkkk 1");
-            }
-        };
+//        Handler handler = new Handler();
+//        Runnable runnable = new Runnable() {
+//            @Override
+//            public void run() {
+//                Log.d(TAG, "checkkkkkkkkkkk 1");
+//                polly = new AmazonPollyClient(credentials, new ClientConfiguration());
+//                polly.setRegion(Region.getRegion(Regions.US_WEST_1));
+//                // Create describe voices request.
+//                DescribeVoicesRequest describeVoicesRequest = new DescribeVoicesRequest();//en-IN
+//
+//                Log.d(TAG, "checkkkkkkkkkkk 1");
+//
+//                // DescribeVoicesRequest describeVoicesRequestIndian = new DescribeVoicesRequest().withLanguageCode("en-IN");
+//                // Synchronously ask Amazon Polly to describe available TTS voices.
+//                DescribeVoicesResult describeVoicesResult = polly.describeVoices(describeVoicesRequest);
+//                voice = describeVoicesResult.getVoices().get(0);
+//
+//                Log.d(TAG, "checkkkkkkkkkkk 1");
+//
+//                SynthesizeSpeechRequest synthReq = new SynthesizeSpeechRequest().withText(textToRead).withVoiceId(voice.getId())
+//                        .withOutputFormat(OutputFormat.Mp3);
+//
+//                SynthesizeSpeechResult synthRes = polly.synthesizeSpeech(synthReq);
+//
+//
+//                speechStream = synthRes.getAudioStream();
+//
+//                Log.d(TAG, "checkkkkkkkkkkk 1");
+//            }
+//        };
 
         Log.d(TAG, "checkkkkkkkkkkk 2");
 
@@ -142,6 +125,71 @@ public class MainActivity extends Activity {
 //        reminderSet(textToRead);
 //        logOutUser(textToRead);
 
+    }
+
+    private class AwsSpeech extends AsyncTask<String, Void, Void> {
+//        @Override
+//        protected void onPreExecute() {
+//            super.onPreExecute();
+//        }
+
+        @Override
+        protected Void doInBackground(String... params) {
+            Log.d(TAG, "doInBackground " + params[0]);
+            Log.d(TAG, "checkkkkkkkkkkk 1");
+
+            polly = new AmazonPollyClient(credentials, new ClientConfiguration());
+            // polly = new AmazonPollyClient(new DefaultAWSCredentialsProviderChain(), new ClientConfiguration());
+
+            polly.setRegion(Region.getRegion(Regions.US_WEST_1));
+            // Create describe voices request.
+            DescribeVoicesRequest describeVoicesRequest = new DescribeVoicesRequest();//en-IN
+
+            Log.d(TAG, "checkkkkkkkkkkk 1");
+
+            // DescribeVoicesRequest describeVoicesRequestIndian = new DescribeVoicesRequest().withLanguageCode("en-IN");
+            // Synchronously ask Amazon Polly to describe available TTS voices.
+            DescribeVoicesResult describeVoicesResult = polly.describeVoices(describeVoicesRequest);
+            voice = describeVoicesResult.getVoices().get(0);
+
+//            try {
+//                polly = new AmazonPollyClient(credentials, new ClientConfiguration());
+////                polly = new AmazonPollyClient(new DefaultAWSCredentialsProviderChain(), new ClientConfiguration());
+//
+//                polly.setRegion(Region.getRegion(Regions.US_WEST_1));
+//                // Create describe voices request.
+//                DescribeVoicesRequest describeVoicesRequest = new DescribeVoicesRequest();//en-IN
+//
+//                Log.d(TAG, "checkkkkkkkkkkk 1");
+//
+//                // DescribeVoicesRequest describeVoicesRequestIndian = new DescribeVoicesRequest().withLanguageCode("en-IN");
+//                // Synchronously ask Amazon Polly to describe available TTS voices.
+//                DescribeVoicesResult describeVoicesResult = polly.describeVoices(describeVoicesRequest);
+//                voice = describeVoicesResult.getVoices().get(0);
+//            }
+//            catch (Exception ex) {
+//                Log.e(TAG, "errrrrrrrrrrrrrrror");
+//            }
+
+
+            Log.d(TAG, "checkkkkkkkkkkk 1");
+
+            SynthesizeSpeechRequest synthReq = new SynthesizeSpeechRequest().withText("one two").withVoiceId(voice.getId())
+                    .withOutputFormat(OutputFormat.Mp3);
+
+            SynthesizeSpeechResult synthRes = polly.synthesizeSpeech(synthReq);
+
+
+            speechStream = synthRes.getAudioStream();
+
+            Log.d(TAG, "checkkkkkkkkkkk 1");
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void args) {
+            Log.d(TAG, "onPostExecute");
+        }
     }
 
     private boolean getAwsConfiguration() {
